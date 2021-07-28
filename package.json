@@ -1,0 +1,27 @@
+{
+  "name": "osa3-full-stack-open-palautukset",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mUusitalo/osa3-full-stack-open-palautukset.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/mUusitalo/osa3-full-stack-open-palautukset/issues"
+  },
+  "homepage": "https://github.com/mUusitalo/osa3-full-stack-open-palautukset#readme",
+  "devDependencies": {
+    "nodemon": "^2.0.12"
+  },
+  "dependencies": {
+    "express": "^4.17.1"
+  }
+}
