@@ -1,7 +1,6 @@
 const express = require('express');
+const morgan = require('morgan');
 
-const app = express();
-app.use(express.json())
 const PORT = 3001;
 
 const db = {
@@ -28,6 +27,13 @@ const db = {
         }
     ]
 };
+
+const app = express();
+app.use(express.json());
+
+morgan.token('JSON', (req, res) => Object.entries(req.body).length ? JSON.stringify(req.body) : null);
+app.use(morgan(':method :url :status :res[content-length] - :response-time ms :JSON'));
+
 
 app.get('/info', (req, res) => {
     const date = new Date();
