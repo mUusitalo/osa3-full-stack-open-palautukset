@@ -37,6 +37,8 @@ app.use(express.json());
 morgan.token('JSON', (req, res) => Object.entries(req.body).length ? JSON.stringify(req.body) : null);
 app.use(morgan(':method :url :status :res[content-length] - :response-time ms :JSON'));
 
+app.use(express.static('build'))
+
 
 app.get('/info', (req, res) => {
     const date = new Date();
