@@ -1,7 +1,8 @@
 const express = require('express');
 const morgan = require('morgan');
+const cors = require('cors');
 
-const PORT = 3001;
+const PORT = process.env.port || 3001;
 
 const db = {
     "persons": [
@@ -29,6 +30,8 @@ const db = {
 };
 
 const app = express();
+
+app.use(cors())
 app.use(express.json());
 
 morgan.token('JSON', (req, res) => Object.entries(req.body).length ? JSON.stringify(req.body) : null);
