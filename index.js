@@ -80,20 +80,27 @@ app.delete('/api/persons/:id', (req, res) => {
     }
 })
 
-app.post('/api/persons', (req, res) => {
-    const id = Math.round(Math.random() * Number.MAX_SAFE_INTEGER);
+app.post('/api/persons', async (req, res) => {
     const {name, number} = req.body;
-    const person = {name, number, id};
+    const person = new Person({name, number});
     console.log(person);
 
     const errorMessages = getInputErrorMessages(person);
-    console.log(errorMessages)
+
     if (errorMessages.length == 0) {
-        db.persons.push(person);
-        res.json(person);
+
+        try {
+            const newPerson = await person.save();
+            res.json(newPerson);
+        } catch(e) {
+            console.log(e);
+            res.status(500).end();
+        };
+
     } else {
+        console.log(errorMessages)
         res.status(400).json({errors: errorMessages});
-    }
+    };
 });
 
 function getInputErrorMessages({name, number}) {
@@ -101,7 +108,7 @@ function getInputErrorMessages({name, number}) {
     const errorMap = {
         'Name must not be blank': !name,
         'Number must not be blank': !number,
-        'Name already exists in database': db.persons.some(existing => existing.name === name)
+        //'Name already exists in database': db.persons.some(existing => existing.name === name)
     };
 
     const errors = Object.keys(errorMap).filter(key => errorMap[key]);
