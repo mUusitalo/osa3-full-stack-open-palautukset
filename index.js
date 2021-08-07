@@ -1,6 +1,9 @@
 const express = require('express');
 const morgan = require('morgan');
 const cors = require('cors');
+require('dotenv').config();
+
+const Person = require('./models/person.js');
 
 const PORT = process.env.PORT || 3001;
 
@@ -48,8 +51,11 @@ app.get('/info', (req, res) => {
     );
 });
 
-app.get('/api/persons', (req, res) => {
-    res.json(db.persons);
+app.get('/api/persons', async (req, res) => {
+    console.log("GET /api/persons searching DB");
+    const response = await Person.find({});
+    console.log("Response in GET /api/persons", response);
+    res.json(response);
 });
 
 app.get('/api/persons/:id', (req, res) => {
