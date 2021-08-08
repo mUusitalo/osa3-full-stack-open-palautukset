@@ -7,80 +7,72 @@ const Person = require('./models/person.js');
 
 const PORT = process.env.PORT || 3001;
 
-const db = {
-    "persons": [
-        {
-            "name": "Arto Hellas",
-            "number": "040-123456",
-            "id": 1
-        },
-        {
-            "name": "Ada Lovelace",
-            "number": "39-44-5323523",
-            "id": 2
-        },
-        {
-            "name": "Dan Abramov",
-            "number": "12-43-234345",
-            "id": 3
-        },
-        {
-            "name": "Mary Poppendieck",
-            "number": "39-23-6423122",
-            "id": 4
-        }
-    ]
-};
-
 const app = express();
-
-app.use(cors())
-app.use(express.json());
 
 morgan.token('JSON', (req, res) => Object.entries(req.body).length ? JSON.stringify(req.body) : null);
 app.use(morgan(':method :url :status :res[content-length] - :response-time ms :JSON'));
+app.use(cors());
+app.use(express.json());
+app.use(express.static('build'));
 
-app.use(express.static('build'))
-
-
-app.get('/info', (req, res) => {
+app.get('/info', async (req, res) => {
     const date = new Date();
+    const persons = await Person.find({});
     res.send(
-        `<p>The phonebook contains ${db.persons.length} people's numbers</p>
+        `<p>The phonebook contains ${persons.length} people's numbers</p>
         <p>${date.toString()}</p>`
     );
 });
 
-app.get('/api/persons', async (req, res) => {
+app.get('/api/persons', async (req, res, next) => {
     console.log("GET /api/persons searching DB");
-    const response = await Person.find({});
-    console.log("Response in GET /api/persons", response);
-    res.json(response);
-});
-
-app.get('/api/persons/:id', (req, res) => {
-    const id = Number(req.params.id);
-    const person = db.persons.find(p => p.id === id);
-    if (person) {
-        res.json(person);
-    } else {
-        res.status(404).end();
+    try {
+        const response = await Person.find({});
+        console.log("Response in GET /api/persons", response);
+        res.json(response);
+    } catch (e) {
+        next(e);
     }
 });
 
-app.delete('/api/persons/:id', (req, res) => {
-    const id = Number(req.params.id);
-    const before = db.persons.length;
-    db.persons = db.persons.filter(p => p.id !== id);
+app.get('/api/persons/:id', async (req, res, next) => {
+    try {
+        const person = await Person.findById(String(req.params.id));
+        if (person) {
+            res.json(person);
+        } else {
+            res.status(404).end();
+        }    
+    } catch (e) {
+        next(e);
+    };
+});
 
-    if (db.persons.length < before) {
-        res.status(204).end();
-    } else {
-        res.status(404).end();
-    }
+app.delete('/api/persons/:id', async (req, res, next) => {
+    const id = req.params.id;
+    try {
+        if (await Person.findByIdAndDelete(id)) {
+            res.status(204).end();
+        } else {
+            res.status(404).end();
+        }
+    } catch (e) {
+        next(e);
+    };
 })
 
-app.post('/api/persons', async (req, res) => {
+app.put('/api/persons/:id', async (req, res, next) => {
+    const {name, number, id} = req.body;
+    try {
+        const newPerson = await Person.findByIdAndUpdate(id, {name, number}, {new: true});
+        if (!newPerson) {return res.status(404).end()};
+        res.json(newPerson);
+    } catch (e) {
+        next(e);
+    };
+});
+
+app.post('/api/persons', async (req, res, next) => {
     const {name, number} = req.body;
     const person = new Person({name, number});
     console.log(person);
@@ -93,13 +85,13 @@ app.post('/api/persons', async (req, res) => {
             const newPerson = await person.save();
             res.json(newPerson);
         } catch(e) {
-            console.log(e);
-            res.status(500).end();
+            next(e);
         };
 
     } else {
-        console.log(errorMessages)
-        res.status(400).json({errors: errorMessages});
+        const error = new Error(errorMessages.join(', '));
+        error.name = 'InputError';
+        next(error);
     };
 });
 
@@ -119,3 +111,23 @@ function getInputErrorMessages({name, number}) {
 app.listen(PORT, () => {
     console.log(`Listening to port ${PORT}`);
 });
+
+function errorHandler (error, req, res, next) {
+    console.log(error);
+    switch(error.name) {
+        case 'CastError':
+            return res.status(400).send({error: 'malformatted id'});
+        case 'InputError':
+            return res.status(400).send({error: error.message});
+    };
+    
+    next(error);
+};
+
+function unknownEndpoint (req, res) {
+    console.log("Unknown endpoint: ", req.url);
+    res.status(404).send({error: 'unknown endpoint'});
+};
+
+app.use(unknownEndpoint);
+app.use(errorHandler);
