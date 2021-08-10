@@ -1,5 +1,6 @@
 //mongo.js
 const mongoose = require('mongoose');
+const uniqueValidator = require('mongoose-unique-validator');
 
 const DB_URL = process.env.DB_URL
 
@@ -13,10 +14,21 @@ async function connectToDatabase() {
 };
 
 const personSchema = new mongoose.Schema({
-    name: String,
-    number: String,
+    name: {
+        type: String,
+        minlength: 3,
+        required: true,
+        unique: true,
+    },
+    number: {
+        type: String,
+        minlength: 8,
+        required: true,
+    },
     date: Date
 });
+
+personSchema.plugin(uniqueValidator, {message: '{VALUE} already exists in the database'});
 
 personSchema.set('toJSON', {
     transform: function(doc, ret) {

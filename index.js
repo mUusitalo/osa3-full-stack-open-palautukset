@@ -64,7 +64,7 @@ app.delete('/api/persons/:id', async (req, res, next) => {
 app.put('/api/persons/:id', async (req, res, next) => {
     const {name, number, id} = req.body;
     try {
-        const newPerson = await Person.findByIdAndUpdate(id, {name, number}, {new: true});
+        const newPerson = await Person.findByIdAndUpdate(id, {number}, {new: true, runValidators: true});
         if (!newPerson) {return res.status(404).end()};
         res.json(newPerson);
     } catch (e) {
@@ -77,36 +77,14 @@ app.post('/api/persons', async (req, res, next) => {
     const person = new Person({name, number});
     console.log(person);
 
-    const errorMessages = getInputErrorMessages(person);
-
-    if (errorMessages.length == 0) {
-
-        try {
-            const newPerson = await person.save();
-            res.json(newPerson);
-        } catch(e) {
-            next(e);
-        };
-
-    } else {
-        const error = new Error(errorMessages.join(', '));
-        error.name = 'InputError';
-        next(error);
+    try {
+        const newPerson = await person.save();
+        res.json(newPerson);
+    } catch(e) {
+        next(e);
     };
+
 });
-
-function getInputErrorMessages({name, number}) {
-
-    const errorMap = {
-        'Name must not be blank': !name,
-        'Number must not be blank': !number,
-        //'Name already exists in database': db.persons.some(existing => existing.name === name)
-    };
-
-    const errors = Object.keys(errorMap).filter(key => errorMap[key]);
-    console.log(errors)
-    return errors
-}
 
 app.listen(PORT, () => {
     console.log(`Listening to port ${PORT}`);
@@ -114,11 +92,14 @@ app.listen(PORT, () => {
 
 function errorHandler (error, req, res, next) {
     console.log(error);
+
     switch(error.name) {
         case 'CastError':
-            return res.status(400).send({error: 'malformatted id'});
+            return res.status(400).json({error: 'malformatted id'});
         case 'InputError':
-            return res.status(400).send({error: error.message});
+            return res.status(400).json({error: error.message});
+        case 'ValidationError':
+            return res.status(400).json({error: error.message});
     };
     
     next(error);
@@ -126,7 +107,7 @@ function errorHandler (error, req, res, next) {
 
 function unknownEndpoint (req, res) {
     console.log("Unknown endpoint: ", req.url);
-    res.status(404).send({error: 'unknown endpoint'});
+    res.status(404).json({error: 'unknown endpoint'});
 };
 
 app.use(unknownEndpoint);
