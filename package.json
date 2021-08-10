@@ -10,7 +10,9 @@
     "build:ui": "rm -rf build && cd ../full-stack-open-palautukset/osa3/puhelinluettelo/ && npm run build --prod && cp -r build ../../../osa3-full-stack-open-palautukset/",
     "deploy": "git push heroku main",
     "deploy:full": "npm run build:ui && git add . && git commit -m uibuild && git push && npm run deploy",
-    "logs:prod": "heroku logs --tail"
+    "logs:prod": "heroku logs --tail",
+    "lint": "eslint .",
+    "fix": "eslint --fix ."
   },
   "repository": {
     "type": "git",
@@ -23,6 +25,7 @@
   },
   "homepage": "https://github.com/mUusitalo/osa3-full-stack-open-palautukset#readme",
   "devDependencies": {
+    "eslint": "^7.32.0",
     "nodemon": "^2.0.12"
   },
   "dependencies": {
